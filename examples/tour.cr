@@ -55,7 +55,7 @@ n: number = 42.0        # types are typically inferred from usage
 str: text = "text_here" # but can be specified
 
 # functions
-function add(x: number, y: number) : number
+function add(x: number, y: number): number
     # implicit return
     x + y
 end
@@ -81,20 +81,20 @@ type expr is
     op(text, expr, expr)
 end
 
-function eval(expr: expr) : number 
+function eval(expr: expr): number 
     match expr with
-        expr.atom(n) then n,
-        expr.op(op, a, b) then match op with 
-            "+" then eval(a) + eval(b),
-            "-" then eval(a) - eval(b),
-            "*" then eval(a) * eval(b),
-            "/" then eval(a) / eval(b)
+        case expr.atom(n) then n 
+        case expr.op(op, a, b) then match op with 
+            case "+" then eval(a) + eval(b)
+            case "-" then eval(a) - eval(b)
+            case "*" then eval(a) * eval(b)
+            case "/" then eval(a) / eval(b)
         end
     end
 end
 
 # records
-type id is number
+type id is number end
 record message is
     id: id,
     message: text,
@@ -104,8 +104,8 @@ end
 
 function message.check(self: message)
     if not self.is_valid then
-        return
-    end
+        write("message is invalid")
+    else end
     match self.status_code with
         200 then write("OK: {self.message}")
         other then write("unhandled status code: {other}")
@@ -113,36 +113,37 @@ function message.check(self: message)
 end
 
 # traits
-record book is
-    title: text,
-    description: text
-end
-record article is
-    title: text,
-    byline: text
-end
+#record book is
+#    title: text,
+#    description: text
+#end
+#record article is
+#    title: text,
+#    byline: text
+#end
 
-trait summary is
-    function name(self) -> text
-    function description(self) -> text
-end
+#trait summary is
+#    function name(self): text
+#    function description(self): text
+#end
 
-record book has summary
-    function name(self) : text self.title end
-    function description(self) : text self.description end
-end
-record article has summary
-    function name(self) : text self.title end
-    function description(self) : text self.byline end
-end
+#record book has summary
+#    function name(self): text self.title end
+#    function description(self): text self.description end
+#end
+#record article has summary
+#    function name(self): text self.title end
+#    function description(self): text self.byline end
+#end
 
-function summarize(thing: summary) 
-    name = thing.name()
-    description = thing.description()
-    write("{name}: {description}")
-end
-summarize(book(title = "Crafting Interpreters", description = "A book about making interpreters."))
-summarize(article(title = "Cool Programming", abstract = "10 features you won't believe exist."))
+#function summarize(thing: summary) 
+#    name = thing.name()
+#    description = thing.description()
+#    write("{name}: {description}")
+#end
+
+#summarize(book(title = "Crafting Interpreters", description = "A book about making interpreters."))
+#summarize(article(title = "Cool Programming", abstract = "10 features you won't believe exist."))
 
 # more literals
 decimal     = 1_000.1
@@ -151,11 +152,17 @@ octal       = 0o77
 binary      = 0b1010_0101
 scientific  = 1.2e3
 
-format   = "number {n}, predicate {p}" # format string
-iso_8601 = "(\d{4})-(\d{2})-(\d{2})"   # compiled regex
-c_string = "some data string"          # contains null byte at the end
+# format string
+format   = "number {n}, predicate {p}" 
+
+# special characters
+special  = "this text contains a tab: '{core.text.tab}' and a newline: {core.text.break}See?" 
+
+# regexes
+iso_8601 = core.text.regex("(\d{4})-(\d{2})-(\d{2})")
+
+#c_string = "some data string"          # contains null byte at the end
 
 # ranges
-range = 1 to 5          # [1, 2, 3, 4, 5]
-range_from = 1 to _     # [1, 2, 3, ...]
-range_to = _ to 5       # [..., 3, 4, 5]
+range = 1..5          # [1, 2, 3, 4, 5]
+range_from = 1..     # [1, 2, 3, ...]
