@@ -34,17 +34,20 @@ end
 # pattern matching
 line = "hello"
 reply = match line with
-    "hello" then "greetings"
-    "goodbye" then "farewell"
-    _ then "huh?"
+    case "hello" then "greetings"
+    case "goodbye" then "farewell"
+    case _ then "huh?"
 end
 write(reply)
 
 # loops
 var sum = 1
 loop
-    if sum < 10 break end
-    sum = sum + sum
+    if sum < 10 then 
+        break 
+    else 
+        sum = sum + sum
+    end
 end
 
 # types
@@ -52,8 +55,9 @@ n: number = 42.0        # types are typically inferred from usage
 str: text = "text_here" # but can be specified
 
 # functions
-function add(x: number, y: number)  # x and y need types, since otherwise the + operation isn't defined
-    x + y                           # no return needed
+function add(x: number, y: number) : number
+    # implicit return
+    x + y
 end
 
 # lists
@@ -77,7 +81,7 @@ type expr is
     op(text, expr, expr)
 end
 
-function eval(expr: expr) -> number 
+function eval(expr: expr) : number 
     match expr with
         expr.atom(n) then n,
         expr.op(op, a, b) then match op with 
@@ -124,12 +128,12 @@ trait summary is
 end
 
 record book has summary
-    function name(self) -> text self.title end
-    function description(self) -> text self.description end
+    function name(self) : text self.title end
+    function description(self) : text self.description end
 end
 record article has summary
-    function name(self) -> text self.title end
-    function description(self) -> text self.byline end
+    function name(self) : text self.title end
+    function description(self) : text self.byline end
 end
 
 function summarize(thing: summary) 
