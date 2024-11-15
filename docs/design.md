@@ -14,8 +14,8 @@ These may or may not already be in the language.
 * Batteries-included core library.
 * Immutability by default.
 * Expressiveness:
-  * Pattern matching/destructuring
-  * Lambdas
+    * Pattern matching/destructuring
+    * Lambdas
 * Acceptable performance.
 * Fast (sub-second for smaller projects) build times.
 * Small binaries.
@@ -31,4 +31,4 @@ These are non-goals - things that will not be added to the language.
 * Ownership/lifetime rules and references.
 * Lifetimes.
 * Separate syntax for generics.
-  * Function parameters and record fields are instead expressed as either a single concrete type or possibly one or more traits.  
+    * Function parameters and record fields are instead expressed as either a single concrete type or possibly one or more traits.  

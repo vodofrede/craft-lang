@@ -61,7 +61,7 @@ impl<'a> Deref for Token<'a> {
 fn token<'a>(src: &mut &'a str) -> Option<Token<'a>> {
     let token = match src.chars().next()? {
         c if c.is_numeric() => Token::Atom(number(src)?, "number"),
-        c if is_punctuation(c) => Token::Op(scan(src, is_punctuation)), // todo: acceptable punctuation tokens
+        c if is_punctuation(c) => Token::Op(operator(src)?), // todo: acceptable punctuation tokens
         c if is_xid_start(c) || c == '_' => match scan(src, is_xid_continue) {
             s @ "true" | s @ "false" => Token::Atom(s, "bool"),
             s @ "unit" => Token::Atom(s, "unit"),
@@ -80,14 +80,19 @@ fn scan(src: &str, pat: fn(char) -> bool) -> &str {
     &src[..src.find(|c| !pat(c)).unwrap()]
 }
 fn is_punctuation(c: char) -> bool {
-    "+-*/%^<>=,.:!?()[]".contains(c)
+    "+-*/%^<>=,.:!?()[]{}".contains(c)
 }
 fn is_keyword(s: &str) -> bool {
     const KEYWORDS: &[&str] = &[
         "var", "and", "or", "not", "xor", "to", "do", "end", "if", "then", "else", "match", "with",
-        "loop", "break", "type", "record", "trait",
+        "loop", "break", "function", "type", "record", "trait",
     ];
     KEYWORDS.contains(&s)
+}
+fn operator(s: &str) -> Option<&str> {
+    static RE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r#"(>=|<=)|==|[+\-*/%^<>=,.:!?()\[\]{}]"#).unwrap());
+    RE.find(s).map(|m| m.as_str())
 }
 fn number(s: &str) -> Option<&str> {
     static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"^\d+(\.\d+)?"#).unwrap());
