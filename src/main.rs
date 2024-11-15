@@ -3,7 +3,7 @@
 mod parse;
 mod token;
 
-use crate::{parse::*, token::*};
+use crate::parse::*;
 use std::{env, fs, process};
 
 fn main() {
@@ -14,6 +14,6 @@ fn main() {
         process::exit(64);
     };
     let src = fs::read_to_string(path).unwrap();
-    let ast = parse(tokens(&src));
+    let ast = parse(&src);
     println!("{ast}")
 }

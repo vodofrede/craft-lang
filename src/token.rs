@@ -1,52 +1,56 @@
 use regex::Regex;
-use std::{
-    iter::{self, Peekable},
-    sync::LazyLock,
-};
+use std::{ops::Deref, sync::LazyLock};
 use unicode_ident::{is_xid_continue, is_xid_start};
 
-pub fn tokens(mut src: &str) -> Peekable<impl Iterator<Item = Token> + '_> {
-    iter::from_fn(move || {
+pub struct Lexer<'a> {
+    src: &'a str,
+    peek: Option<Token<'a>>,
+}
+impl<'a> Iterator for Lexer<'a> {
+    type Item = Token<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.peek.is_some() {
+            return self.peek.take();
+        }
+
         loop {
-            src = src.trim_start();
-            if !src.starts_with('#') {
+            self.src = self.src.trim_start();
+            if !self.src.starts_with('#') {
                 break;
             }
-            src = src.trim_start_matches(|c| c != '\n');
+            self.src = self.src.trim_start_matches(|c| c != '\n');
         }
-        let token = token(&mut src)?;
-        eprintln!("token: {:?}", token.text());
-        src = &src[token.text().len()..];
-        Some(token)
-    })
-    .peekable()
-}
-fn token(src: &mut &str) -> Option<Token> {
-    let token = match src.chars().next()? {
-        c if c.is_numeric() => Token::Atom(number(src)?.to_string(), "number"),
-        c if is_punctuation(c) => Token::Op(scan(src, is_punctuation).to_string()), // todo: acceptable punctuation tokens
-        c if is_xid_start(c) || c == '_' => match scan(src, is_xid_continue) {
-            s @ "true" | s @ "false" => Token::Atom(s.to_string(), "bool"),
-            s @ "unit" => Token::Atom(s.to_string(), "unit"),
-            s if is_keyword(s) => Token::Op(s.to_string()),
-            s => Token::Atom(s.to_string(), "id"),
-        },
-        '"' => Token::Atom(text(src)?.to_string(), "text"),
-        c => {
-            panic!("bad character: {c:?}");
-        }
-    };
 
-    Some(token)
+        let token = token(&mut self.src)?;
+        self.src = &self.src[token.len()..];
+        Some(token)
+    }
+}
+impl<'a> Lexer<'a> {
+    pub fn new(src: &str) -> Lexer {
+        Lexer { src, peek: None }
+    }
+
+    pub fn peek(&mut self) -> Option<&Token> {
+        if self.peek.is_some() {
+            return self.peek.as_ref();
+        }
+
+        self.peek = self.next();
+        self.peek.as_ref()
+    }
 }
 
 #[derive(Debug, Clone)]
-pub enum Token {
-    Atom(String, &'static str),
-    Op(String),
+pub enum Token<'a> {
+    Atom(&'a str, &'static str),
+    Op(&'a str),
 }
-impl Token {
-    pub fn text(&self) -> &str {
+impl<'a> Deref for Token<'a> {
+    type Target = &'a str;
+
+    fn deref(&self) -> &Self::Target {
         match self {
             Token::Atom(t, _) => t,
             Token::Op(t) => t,
@@ -54,6 +58,24 @@ impl Token {
     }
 }
 
+fn token<'a>(src: &mut &'a str) -> Option<Token<'a>> {
+    let token = match src.chars().next()? {
+        c if c.is_numeric() => Token::Atom(number(src)?, "number"),
+        c if is_punctuation(c) => Token::Op(scan(src, is_punctuation)), // todo: acceptable punctuation tokens
+        c if is_xid_start(c) || c == '_' => match scan(src, is_xid_continue) {
+            s @ "true" | s @ "false" => Token::Atom(s, "bool"),
+            s @ "unit" => Token::Atom(s, "unit"),
+            s if is_keyword(s) => Token::Op(s),
+            s => Token::Atom(s, "id"),
+        },
+        '"' => Token::Atom(text(src)?, "text"),
+        c => {
+            panic!("bad character: {c:?}");
+        }
+    };
+
+    Some(token)
+}
 fn scan(src: &str, pat: fn(char) -> bool) -> &str {
     &src[..src.find(|c| !pat(c)).unwrap()]
 }
