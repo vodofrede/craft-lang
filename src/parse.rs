@@ -68,6 +68,9 @@ fn expr_bp(lexer: &mut Lexer, min_power: usize) -> Option<Expr> {
         Token::Op("loop") => prod(lexer, "loop", [do_block, skip]),
         Token::Op("break") => Expr::Cons("break".to_string(), vec![]),
         Token::Op("function") => prod(lexer, "function", [expr, do_block, skip]),
+        Token::Op("type") => prod(lexer, "type", [expr, skip, params, skip]),
+        Token::Op("record") => prod(lexer, "record", [expr, skip, params, skip]),
+        // todo: traits
         t => {
             eprintln!("bad token: {t:?}");
             return None;
@@ -79,18 +82,22 @@ fn expr_bp(lexer: &mut Lexer, min_power: usize) -> Option<Expr> {
         let Some(Token::Op(op)) = lexer.peek() else {
             break;
         };
-        let Some((left_power, right_power)) = infix_power(op) else {
-            break;
-        };
-        if left_power < min_power {
-            break;
-        }
-        let Some(Token::Op(op)) = lexer.next() else {
-            break;
-        };
-        left = match op {
-            "(" => prod(lexer, &left.to_string(), [params, skip]),
-            _ => Expr::Cons(op.to_string(), vec![left, expr_bp(lexer, right_power)?]),
+        let op = op.to_string();
+        if let Some((left_power, right_power)) = infix_power(&op) {
+            if left_power < min_power {
+                break;
+            }
+            lexer.next();
+            left = match op.as_str() {
+                "(" => prod(lexer, &left.to_string(), [params, skip]),
+                _ => Expr::Cons(op, vec![left, expr_bp(lexer, right_power)?]),
+            }
+        } else if let Some(power) = postfix_power(&op) {
+            if power < min_power {
+                break;
+            }
+            lexer.next();
+            left = Expr::Cons(op, vec![left])
         }
     }
 
@@ -170,7 +177,6 @@ fn infix_power(op: &str) -> Option<(usize, usize)> {
     let power = match op {
         "=" => (4, 3),
         ":" => (5, 6),
-        "to" => (7, 8),
         "or" => (9, 10),
         "xor" => (11, 12),
         "and" => (13, 14),
@@ -189,6 +195,15 @@ fn unary_power(op: &str) -> Option<usize> {
     let power = match op {
         "-" | "not" => 21,
         "var" => 25,
+        _ => return None,
+    };
+
+    Some(power)
+}
+fn postfix_power(op: &str) -> Option<usize> {
+    let power = match op {
+        "!" => 26,
+        "?" => 27,
         _ => return None,
     };
 

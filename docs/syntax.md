@@ -70,8 +70,8 @@ stmt_expr -> bind_stmt
 
 bind_stmt -> pattern (":" type)? "=" expr ("else" expr*)?
 function_stmt -> "function" id "(" (pattern ":" type ("=" expr*)?)* ")" stmt_expr* "end"
-type_stmt -> "type" id "is" type ("," type)* "end"
-record_stmt -> "record" id "is" (id ":" type ",")* "end"
+type_stmt -> "type" id "is" pattern "end"
+record_stmt -> "record" id "is" pattern "end"
 trait_stmt -> "trait" id "is" stmt_expr* "end"
 trait_impl -> id "has" id stmt_expr* "end"
 ```
